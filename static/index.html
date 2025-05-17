@@ -384,6 +384,121 @@
             font-size: 1.2rem;
             margin-top: 10px;
         }
+
+        /* Toggle switch styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-green);
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--primary-green);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-label {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        /* Search results styles */
+        .search-results {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .search-result-item {
+            background-color: #f9f9f9;
+            border-left: 3px solid var(--secondary-green);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .search-result-title {
+            font-weight: 600;
+            color: var(--dark-green);
+            margin-bottom: 5px;
+        }
+
+        .search-result-source {
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Settings panel */
+        .settings-panel {
+            background-color: var(--light-green);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            font-weight: 600;
+            color: var(--dark-green);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .settings-title i {
+            margin-right: 8px;
+        }
+
+        .settings-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .settings-option:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -407,6 +522,26 @@
         <div class="main-content">
             <div class="input-section">
                 <h2><i class="fas fa-file-contract"></i> Input Contract</h2>
+                
+                <div class="settings-panel">
+                    <div class="settings-title">
+                        <i class="fas fa-cog"></i> Audit Settings
+                    </div>
+                    <div class="settings-option">
+                        <label class="toggle-label">
+                            <span class="switch">
+                                <input type="checkbox" id="use-search" checked>
+                                <span class="slider"></span>
+                            </span>
+                            Enable External Search
+                            <span class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">When enabled, the system will search external Shariah standards databases for more comprehensive analysis.</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label for="product-text">Enter Financial Product Description/Contract:</label>
                     <textarea id="product-text" placeholder="Paste your contract or product description here..."></textarea>
@@ -429,6 +564,7 @@
                     <div class="tab active" data-tab="summary">Summary</div>
                     <div class="tab" data-tab="violations">Violations</div>
                     <div class="tab" data-tab="details">Detailed Analysis</div>
+                    <div class="tab" data-tab="standards">Shariah Standards</div>
                 </div>
                 
                 <div id="summary" class="tab-content active">
@@ -467,6 +603,17 @@
                 <div id="details" class="tab-content">
                     <div id="detailed-analysis">
                         <p>Submit a contract to see detailed analysis</p>
+                    </div>
+                </div>
+                
+                <div id="standards" class="tab-content">
+                    <div class="result-card">
+                        <div class="result-title">
+                            <i class="fas fa-book"></i> Relevant Shariah Standards
+                        </div>
+                        <div id="standards-results">
+                            <p>Submit a contract with search enabled to see relevant Shariah standards</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -508,6 +655,7 @@
         // Function to perform audit
         async function auditProduct() {
             const productText = document.getElementById('product-text').value.trim();
+            const useSearch = document.getElementById('use-search').checked;
             
             if (!productText) {
                 alert('Please enter a product description or contract text');
@@ -519,12 +667,20 @@
             document.getElementById('submit-btn').disabled = true;
             
             try {
+                // First, check if the backend supports the use_search parameter
+                let requestBody = { product_text: productText };
+                
+                // Only add use_search if the toggle is visible and enabled
+                if (document.getElementById('use-search').parentElement.style.display !== 'none') {
+                    requestBody.use_search = useSearch;
+                }
+                
                 const response = await fetch(`${API_BASE_URL}/audit`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ product_text: productText })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 const data = await response.json();
@@ -536,6 +692,18 @@
                 // Display results
                 displayResults(data);
                 
+                // If search was enabled, try to fetch standards
+                if (useSearch) {
+                    try {
+                        if (data.product_summary?.product_type) {
+                            await fetchStandards(data);
+                        }
+                    } catch (searchError) {
+                        console.error('Error fetching standards:', searchError);
+                        // Don't alert the user, just log the error
+                    }
+                }
+                
                 // Switch to summary tab
                 document.querySelector('.tab[data-tab="summary"]').click();
                 
@@ -546,6 +714,172 @@
                 // Hide loading indicator
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('submit-btn').disabled = false;
+            }
+        }
+
+        // Function to fetch relevant standards
+        async function fetchStandards(auditData) {
+            const useSearch = document.getElementById('use-search').checked;
+            if (!useSearch) {
+                document.getElementById('standards-results').innerHTML = 
+                    '<p>External search is disabled. Enable it in settings to see relevant Shariah standards.</p>';
+                return;
+            }
+            
+            try {
+                // Extract product type from audit data
+                const productType = auditData.product_summary?.product_type || '';
+                
+                if (!productType) {
+                    document.getElementById('standards-results').innerHTML = 
+                        '<p>Could not determine product type for standards search.</p>';
+                    return;
+                }
+                
+                document.getElementById('standards-results').innerHTML = 
+                    '<p><i class="fas fa-spinner fa-spin"></i> Searching for relevant standards...</p>';
+                
+                const response = await fetch(`${API_BASE_URL}/applicable-standards?product_type=${encodeURIComponent(productType)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.standards && data.standards.length > 0) {
+                    let standardsHTML = '<div class="search-results">';
+                    
+                    data.standards.forEach(standard => {
+                        standardsHTML += `
+                            <div class="search-result-item">
+                                <div class="search-result-title">${standard.title}</div>
+                                <p>${standard.snippet || standard.summary || 'No description available'}</p>
+                                <div class="search-result-source">Source: ${standard.source || 'Unknown'}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    standardsHTML += '</div>';
+                    document.getElementById('standards-results').innerHTML = standardsHTML;
+                } else {
+                    document.getElementById('standards-results').innerHTML = 
+                        '<p>No relevant standards found for this product type.</p>';
+                }
+                
+            } catch (error) {
+                console.error('Error fetching standards:', error);
+                document.getElementById('standards-results').innerHTML = 
+                    `<p>Error fetching standards: ${error.message}. The search functionality may not be fully implemented.</p>
+                     <p>Using the simulated standards instead:</p>`;
+                
+                // Use simulated standards as fallback
+                const simulatedStandards = getSimulatedStandards(auditData.product_summary?.product_type || '');
+                
+                if (simulatedStandards.length > 0) {
+                    let standardsHTML = '<div class="search-results">';
+                    
+                    simulatedStandards.forEach(standard => {
+                        standardsHTML += `
+                            <div class="search-result-item">
+                                <div class="search-result-title">${standard.title}</div>
+                                <p>${standard.summary || 'No description available'}</p>
+                                <div class="search-result-source">Source: ${standard.source || 'Simulated'}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    standardsHTML += '</div>';
+                    document.getElementById('standards-results').innerHTML += standardsHTML;
+                }
+            }
+        }
+
+        // Function to find similar standards for a specific clause
+        async function findSimilarStandards(clauseEncoded) {
+            const useSearch = document.getElementById('use-search').checked;
+            if (!useSearch) {
+                alert('External search is disabled. Please enable it in settings to search for standards.');
+                return;
+            }
+            
+            const clause = decodeURIComponent(clauseEncoded);
+            
+            try {
+                // Switch to standards tab first and show loading
+                document.querySelector('.tab[data-tab="standards"]').click();
+                document.getElementById('standards-results').innerHTML = 
+                    `<h4>Searching for standards related to:</h4>
+                     <div class="clause-content">
+                        "${clause.substring(0, 100)}${clause.length > 100 ? '...' : ''}"
+                     </div>
+                     <p><i class="fas fa-spinner fa-spin"></i> Searching...</p>`;
+                
+                const response = await fetch(`${API_BASE_URL}/search-standards?query=${encodeURIComponent(clause)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    let standardsHTML = `
+                        <h4>Standards Related to Clause:</h4>
+                        <div class="clause-content">
+                            "${clause.substring(0, 100)}${clause.length > 100 ? '...' : ''}"
+                        </div>
+                        <div class="search-results">
+                    `;
+                    
+                    data.results.forEach(standard => {
+                        standardsHTML += `
+                            <div class="search-result-item">
+                                <div class="search-result-title">${standard.title}</div>
+                                <p>${standard.snippet || 'No description available'}</p>
+                                <div class="search-result-source">Source: ${standard.source || 'Unknown'}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    standardsHTML += '</div>';
+                    document.getElementById('standards-results').innerHTML = standardsHTML;
+                } else {
+                    document.getElementById('standards-results').innerHTML = 
+                        '<p>No relevant standards found for this clause.</p>';
+                }
+                
+            } catch (error) {
+                console.error('Error searching standards:', error);
+                document.getElementById('standards-results').innerHTML = 
+                    `<p>Error searching for standards: ${error.message}. The search functionality may not be fully implemented.</p>
+                     <p>Using simulated search results instead:</p>`;
+                
+                // Use simulated search results as fallback
+                const simulatedResults = getSimulatedSearchResults(clause);
+                
+                if (simulatedResults.length > 0) {
+                    let standardsHTML = `
+                        <h4>Simulated Standards Related to Clause:</h4>
+                        <div class="clause-content">
+                            "${clause.substring(0, 100)}${clause.length > 100 ? '...' : ''}"
+                        </div>
+                        <div class="search-results">
+                    `;
+                    
+                    simulatedResults.forEach(standard => {
+                        standardsHTML += `
+                            <div class="search-result-item">
+                                <div class="search-result-title">${standard.title}</div>
+                                <p>${standard.snippet || 'No description available'}</p>
+                                <div class="search-result-source">Source: ${standard.source || 'Simulated'}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    standardsHTML += '</div>';
+                    document.getElementById('standards-results').innerHTML = standardsHTML;
+                }
             }
         }
 
@@ -737,6 +1071,18 @@
                                 <p><strong>Reason:</strong> ${violation.reason}</p>
                                 <p><strong>Suggested Fix:</strong> ${violation.suggested_fix || 'No suggestion available'}</p>
                                 ${violation.source_doc ? `<p><strong>Source:</strong> ${violation.source_doc}</p>` : ''}
+                                ${violation.search_results ? `
+                                <div class="search-results">
+                                    <h5>Related Standards:</h5>
+                                    ${violation.search_results.map(result => `
+                                        <div class="search-result-item">
+                                            <div class="search-result-title">${result.title}</div>
+                                            <p>${result.snippet}</p>
+                                            <div class="search-result-source">Source: ${result.source}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ` : ''}
                             </div>
                         </div>
                     `;
@@ -779,6 +1125,9 @@
                                         <p><strong>Context:</strong> "${clause.source_text}..."</p>
                                     ` : ''}
                                 ` : ''}
+                                <button class="btn btn-sm" onclick="findSimilarStandards('${encodeURIComponent(clause.clause)}')">
+                                    <i class="fas fa-search"></i> Find Related Standards
+                                </button>
                             </div>
                         </div>
                     `;
@@ -788,10 +1137,141 @@
             }
         }
 
+        // Function to get standard details
+        async function getStandardDetails(reference) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/standard-details?reference=${encodeURIComponent(reference)}`);
+                const data = await response.json();
+                
+                // Display standard details in a modal or panel
+                alert(`Standard: ${data.title}\n\n${data.summary}`);
+                
+            } catch (error) {
+                console.error('Error fetching standard details:', error);
+                alert('Error fetching standard details. Please try again.');
+            }
+        }
+
         // Helper function to capitalize first letter
         function capitalizeFirstLetter(string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
         }
+
+        // Helper function to get simulated standards for a product type
+        function getSimulatedStandards(productType) {
+            productType = productType.toLowerCase();
+            
+            const standards = [];
+            
+            if (productType.includes('murabaha')) {
+                standards.push({
+                    "title": "AAOIFI Shariah Standard No. 8: Murabaha",
+                    "summary": "Guidelines for Murabaha transactions in Islamic finance",
+                    "source": "AAOIFI (Simulated)"
+                });
+            }
+            
+            if (productType.includes('ijarah') || productType.includes('lease')) {
+                standards.push({
+                    "title": "AAOIFI Shariah Standard No. 9: Ijarah",
+                    "summary": "Guidelines for Ijarah (leasing) transactions in Islamic finance",
+                    "source": "AAOIFI (Simulated)"
+                });
+            }
+            
+            if (productType.includes('sukuk') || productType.includes('bond')) {
+                standards.push({
+                    "title": "AAOIFI Shariah Standard No. 17: Investment Sukuk",
+                    "summary": "Guidelines for Sukuk (Islamic bonds) in Islamic finance",
+                    "source": "AAOIFI (Simulated)"
+                });
+            }
+            
+            // Add general standards that apply to all Islamic financial products
+            standards.push({
+                "title": "AAOIFI Shariah Standard No. 21: Financial Papers",
+                "summary": "General guidelines for financial instruments in Islamic finance",
+                "source": "AAOIFI (Simulated)"
+            });
+            
+            return standards;
+        }
+
+        // Helper function to get simulated search results for a clause
+        function getSimulatedSearchResults(clause) {
+            clause = clause.toLowerCase();
+            
+            const results = [];
+            
+            if (clause.includes('murabaha') || clause.includes('profit markup')) {
+                results.push({
+                    "title": "Murabaha (Cost-Plus Financing)",
+                    "snippet": "Murabaha is a sale contract where the seller explicitly declares the cost and profit margin. In Islamic banking, the bank purchases an asset and sells it to the client at a markup.",
+                    "source": "AAOIFI Shariah Standard No. 8 (Simulated)"
+                });
+            }
+            
+            if (clause.includes('riba') || clause.includes('interest')) {
+                results.push({
+                    "title": "Prohibition of Riba (Interest)",
+                    "snippet": "Riba is strictly prohibited in Islamic finance. It refers to any excess compensation without due consideration. This includes interest on loans and investments.",
+                    "source": "AAOIFI Shariah Standard No. 21 (Simulated)"
+                });
+            }
+            
+            if (clause.includes('penalty') || clause.includes('default')) {
+                results.push({
+                    "title": "Late Payment Guidelines",
+                    "snippet": "Late payment penalties that generate profit for the lender are not permissible. However, penalties directed to charity may be allowed to discourage deliberate default.",
+                    "source": "AAOIFI Shariah Standard No. 3 (Simulated)"
+                });
+            }
+            
+            if (clause.includes('bonds') || clause.includes('liquidity')) {
+                results.push({
+                    "title": "Sukuk (Islamic Bonds)",
+                    "snippet": "Conventional bonds are not Shariah-compliant due to their interest-based nature. Sukuk are the Islamic alternative, representing ownership in an underlying asset.",
+                    "source": "AAOIFI Shariah Standard No. 17 (Simulated)"
+                });
+            }
+            
+            // If no specific matches, add general Islamic finance principles
+            if (results.length === 0) {
+                results.push({
+                    "title": "General Shariah Compliance Principles",
+                    "snippet": "Islamic finance prohibits interest (riba), excessive uncertainty (gharar), gambling (maysir), and investment in prohibited activities (haram).",
+                    "source": "General Shariah Principles (Simulated)"
+                });
+            }
+            
+            return results;
+        }
+
+        // Check server health and search status on page load
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+                
+                // Update search toggle based on server configuration
+                document.getElementById('use-search').checked = data.search_enabled;
+                
+                if (!data.search_enabled) {
+                    // Add a note that search is disabled on the server
+                    const settingsPanel = document.querySelector('.settings-panel');
+                    const note = document.createElement('div');
+                    note.className = 'settings-option';
+                    note.innerHTML = '<p style="color: #856404; font-size: 0.9rem;"><i class="fas fa-exclamation-triangle"></i> Note: Search is disabled on the server. Contact administrator to enable it.</p>';
+                    settingsPanel.appendChild(note);
+                }
+                
+            } catch (error) {
+                console.error('Error checking server status:', error);
+            }
+        }
+
+        // Call the function when the page loads
+        window.addEventListener('DOMContentLoaded', checkServerStatus);
 
         // Example product for testing
         document.getElementById('product-text').value = `This Murabaha agreement involves deferred payment terms with added profit markup. 
