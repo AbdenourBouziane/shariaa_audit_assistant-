@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shariah Audit Assistant</title>
+    <!-- Font Awesome for Islamic icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Amiri for Arabic text and Nunito for English -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-green: #006838;
+            --secondary-green: #00A651;
+            --light-green: #E8F5E9;
+            --dark-green: #004D2C;
+            --white: #FFFFFF;
+            --light-gray: #F5F5F5;
+            --border-color: #CCCCCC;
+            --danger: #D32F2F;
+            --warning: #FFC107;
+            --success: #388E3C;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--light-gray);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .arabic-text {
+            font-family: 'Amiri', serif;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--primary-green);
+            color: var(--white);
+            padding: 20px 0;
+            text-align: center;
+            position: relative;
+            border-bottom: 5px solid var(--secondary-green);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header-detail {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+
+        .header-detail .islamic-pattern {
+            margin: 0 15px;
+            color: var(--white);
+            opacity: 0.8;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            gap: 20px;
+        }
+
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .results-section {
+            flex: 2;
+            min-width: 400px;
+            background-color: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: var(--primary-green);
+            border-bottom: 2px solid var(--light-green);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        h2 i {
+            margin-right: 10px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-green);
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            resize: vertical;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        button {
+            background-color: var(--primary-green);
+            color: var(--white);
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover {
+            background-color: var(--dark-green);
+        }
+
+        button i {
+            margin-right: 8px;
+        }
+
+        /* Results Styles */
+        .result-card {
+            background-color: var(--light-green);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary-green);
+        }
+
+        .result-title {
+            font-weight: 700;
+            color: var(--primary-green);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .result-title i {
+            margin-right: 8px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        table th, table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table th {
+            background-color: var(--light-green);
+            color: var(--primary-green);
+        }
+
+        /* Badges for compliance status */
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .badge-success {
+            background-color: #D4EDDA;
+            color: var(--success);
+        }
+
+        .badge-danger {
+            background-color: #F8D7DA;
+            color: var(--danger);
+        }
+
+        .badge-warning {
+            background-color: #FFF3CD;
+            color: #856404;
+        }
+
+        /* Severity indicators */
+        .severity {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .severity-low {
+            background-color: var(--success);
+        }
+
+        .severity-medium {
+            background-color: var(--warning);
+        }
+
+        .severity-high {
+            background-color: var(--danger);
+        }
+
+        /* Loading indicator */
+        #loading {
+            display: none;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        #loading i {
+            animation: spin 2s linear infinite;
+            font-size: 2rem;
+            color: var(--primary-green);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .input-section, .results-section {
+                min-width: 100%;
+            }
+        }
+
+        /* Islamic decorative elements */
+        .islamic-decoration {
+            height: 30px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><path fill="%23006838" d="M15 0L0 15h30L15 0zm0 30l15-15H0l15 15z"/></svg>');
+            background-repeat: repeat-x;
+            opacity: 0.3;
+            margin: 20px 0;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark-green);
+            color: var(--white);
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Custom tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid var(--primary-green);
+            color: var(--primary-green);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Clause cards */
+        .clause-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: var(--light-gray);
+            transition: transform 0.3s;
+        }
+
+        .clause-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .clause-card h4 {
+            margin-bottom: 10px;
+            color: var(--dark-green);
+        }
+
+        .clause-content {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: var(--white);
+            border-radius: 5px;
+            border-left: 3px solid var(--primary-green);
+        }
+
+        .compliance-details {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            background-color: var(--primary-green);
+            color: var(--white);
+        }
+
+        footer .arabic-text {
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Shariah Audit Assistant</h1>
+            <p>Automated Islamic Finance Compliance Checker</p>
+            <div class="header-detail">
+                <span>Verifying Contract Compliance</span>
+                <span class="islamic-pattern"><i class="fas fa-mosque"></i></span>
+                <span>Identifying Non-Compliant Clauses</span>
+                <span class="islamic-pattern"><i class="fas fa-star-and-crescent"></i></span>
+                <span>Suggesting Improvements</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="islamic-decoration"></div>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <h2><i class="fas fa-file-contract"></i> Input Contract</h2>
+                <div class="form-group">
+                    <label for="product-text">Enter Financial Product Description/Contract:</label>
+                    <textarea id="product-text" placeholder="Paste your contract or product description here..."></textarea>
+                </div>
+                
+                <button id="submit-btn" onclick="auditProduct()">
+                    <i class="fas fa-search"></i> Perform Shariah Audit
+                </button>
+                
+                <div id="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Processing your document...</p>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <h2><i class="fas fa-balance-scale"></i> Audit Results</h2>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="summary">Summary</div>
+                    <div class="tab" data-tab="violations">Violations</div>
+                    <div class="tab" data-tab="details">Detailed Analysis</div>
+                </div>
+                
+                <div id="summary" class="tab-content active">
+                    <div class="result-card">
+                        <div class="result-title">
+                            <i class="fas fa-check-circle"></i> Overall Compliance Status
+                        </div>
+                        <div id="compliance-status">No audit performed yet</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-title">
+                            <i class="fas fa-info-circle"></i> Product Information
+                        </div>
+                        <div id="product-info">
+                            <p>Submit a contract to see product information</p>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-title">
+                            <i class="fas fa-exclamation-triangle"></i> Issues Summary
+                        </div>
+                        <div id="issues-summary">
+                            <p>Submit a contract to see issues</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="violations" class="tab-content">
+                    <div id="violations-list">
+                        <p>Submit a contract to see violations</p>
+                    </div>
+                </div>
+                
+                <div id="details" class="tab-content">
+                    <div id="detailed-analysis">
+                        <p>Submit a contract to see detailed analysis</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="islamic-decoration"></div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>Shariah Audit Assistant &copy; 2025</p>
+            <p class="arabic-text">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+        </div>
+    </footer>
+
+    <script>
+        // API endpoint - change this to your actual backend URL
+        const API_BASE_URL = 'http://localhost:5000/api';
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Hide all tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Show selected tab content
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Function to perform audit
+        async function auditProduct() {
+            const productText = document.getElementById('product-text').value.trim();
+            
+            if (!productText) {
+                alert('Please enter a product description or contract text');
+                return;
+            }
+            
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submit-btn').disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/audit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ product_text: productText })
+                });
+                
+                const data = await response.json();
+                
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submit-btn').disabled = false;
+                
+                // Display results
+                displayResults(data);
+                
+                // Switch to summary tab
+                document.querySelector('.tab[data-tab="summary"]').click();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request. Please try again.');
+                
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submit-btn').disabled = false;
+            }
+        }
+
+        // Function to display audit results
+        function displayResults(data) {
+            // Summary tab
+            const complianceStatus = document.getElementById('compliance-status');
+            const productInfo = document.getElementById('product-info');
+            const issuesSummary = document.getElementById('issues-summary');
+            
+            // Violations tab
+            const violationsList = document.getElementById('violations-list');
+            
+            // Details tab
+            const detailedAnalysis = document.getElementById('detailed-analysis');
+            
+            // Clear previous results
+            complianceStatus.innerHTML = '';
+            productInfo.innerHTML = '';
+            issuesSummary.innerHTML = '';
+            violationsList.innerHTML = '';
+            detailedAnalysis.innerHTML = '';
+            
+            // Display overall compliance status
+            if (data.overall_compliance) {
+                complianceStatus.innerHTML = `
+                    <div class="badge badge-success">
+                        <i class="fas fa-check-circle"></i> Shariah Compliant
+                    </div>
+                    <p>This product appears to be Shariah compliant.</p>
+                `;
+            } else {
+                complianceStatus.innerHTML = `
+                    <div class="badge badge-danger">
+                        <i class="fas fa-times-circle"></i> Non-Compliant
+                    </div>
+                    <p>This product contains clauses that may violate Shariah principles.</p>
+                `;
+            }
+            
+            // Display product information
+            const productData = data.product_summary || {};
+            const structuredData = data.product_summary || {};
+            
+            let productInfoHTML = '<table>';
+            
+            if (structuredData.product_type) {
+                productInfoHTML += `
+                    <tr>
+                        <th>Product Type</th>
+                        <td>${structuredData.product_type || 'Not specified'}</td>
+                    </tr>
+                `;
+            }
+            
+            if (structuredData.contract_type) {
+                productInfoHTML += `
+                    <tr>
+                        <th>Contract Type</th>
+                        <td>${structuredData.contract_type || 'Not specified'}</td>
+                    </tr>
+                `;
+            }
+            
+            if (structuredData.main_parties && structuredData.main_parties.length > 0) {
+                productInfoHTML += `
+                    <tr>
+                        <th>Main Parties</th>
+                        <td>${structuredData.main_parties.join(', ') || 'Not specified'}</td>
+                    </tr>
+                `;
+            }
+            
+            productInfoHTML += '</table>';
+            
+            if (structuredData.key_clauses && structuredData.key_clauses.length > 0) {
+                productInfoHTML += '<h4>Key Clauses</h4><ul>';
+                structuredData.key_clauses.forEach(clause => {
+                    productInfoHTML += `<li>${clause}</li>`;
+                });
+                productInfoHTML += '</ul>';
+            }
+            
+            if (structuredData.financial_terms && structuredData.financial_terms.length > 0) {
+                productInfoHTML += '<h4>Financial Terms</h4><ul>';
+                structuredData.financial_terms.forEach(term => {
+                    productInfoHTML += `<li>${term}</li>`;
+                });
+                productInfoHTML += '</ul>';
+            }
+            
+            productInfo.innerHTML = productInfoHTML;
+            
+            // Display issues summary
+            const violations = data.violations || [];
+            
+            if (violations.length === 0) {
+                issuesSummary.innerHTML = '<p>No compliance issues detected.</p>';
+            } else {
+                let categoryCounts = {};
+                let severityCounts = { high: 0, medium: 0, low: 0 };
+                
+                violations.forEach(violation => {
+                    const category = violation.category || 'other';
+                    const severity = violation.severity || 'low';
+                    
+                    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+                    severityCounts[severity.toLowerCase()]++;
+                });
+                
+                let issuesHTML = `
+                    <p>Found ${violations.length} potential compliance issue(s):</p>
+                    <table>
+                        <tr>
+                            <th>Severity</th>
+                            <th>Count</th>
+                        </tr>
+                `;
+                
+                if (severityCounts.high > 0) {
+                    issuesHTML += `
+                        <tr>
+                            <td><span class="severity severity-high"></span> High</td>
+                            <td>${severityCounts.high}</td>
+                        </tr>
+                    `;
+                }
+                
+                if (severityCounts.medium > 0) {
+                    issuesHTML += `
+                        <tr>
+                            <td><span class="severity severity-medium"></span> Medium</td>
+                            <td>${severityCounts.medium}</td>
+                        </tr>
+                    `;
+                }
+                
+                if (severityCounts.low > 0) {
+                    issuesHTML += `
+                        <tr>
+                            <td><span class="severity severity-low"></span> Low</td>
+                            <td>${severityCounts.low}</td>
+                        </tr>
+                    `;
+                }
+                
+                issuesHTML += `
+                    </table>
+                    <h4>Issue Categories</h4>
+                    <table>
+                        <tr>
+                            <th>Category</th>
+                            <th>Count</th>
+                        </tr>
+                `;
+                
+                for (const [category, count] of Object.entries(categoryCounts)) {
+                    issuesHTML += `
+                        <tr>
+                            <td>${capitalizeFirstLetter(category)}</td>
+                            <td>${count}</td>
+                        </tr>
+                    `;
+                }
+                
+                issuesHTML += '</table>';
+                issuesSummary.innerHTML = issuesHTML;
+            }
+            
+            // Display violations list
+            if (violations.length === 0) {
+                violationsList.innerHTML = '<p>No compliance issues detected.</p>';
+            } else {
+                let violationsHTML = '';
+                
+                violations.forEach((violation, index) => {
+                    const severityClass = `severity-${violation.severity || 'low'}`;
+                    
+                    violationsHTML += `
+                        <div class="clause-card">
+                            <h4>
+                                <span class="severity ${severityClass}"></span>
+                                Issue #${index + 1} - ${capitalizeFirstLetter(violation.category || 'Other')}
+                            </h4>
+                            <div class="clause-content">
+                                "${violation.clause}"
+                            </div>
+                            <div class="compliance-details">
+                                <p><strong>Reason:</strong> ${violation.reason}</p>
+                                <p><strong>Suggested Fix:</strong> ${violation.suggested_fix || 'No suggestion available'}</p>
+                                ${violation.source_doc ? `<p><strong>Source:</strong> ${violation.source_doc}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                violationsList.innerHTML = violationsHTML;
+            }
+            
+            // Display detailed analysis
+            const suspiciousClauses = data.suspicious_clauses || [];
+            
+            if (suspiciousClauses.length === 0) {
+                detailedAnalysis.innerHTML = '<p>No clauses were flagged for analysis.</p>';
+            } else {
+                let detailsHTML = '<h3>Analyzed Clauses</h3>';
+                
+                suspiciousClauses.forEach((clause, index) => {
+                    const isCompliant = clause.compliant;
+                    const badgeClass = isCompliant ? 'badge-success' : 'badge-danger';
+                    const icon = isCompliant ? 'check-circle' : 'times-circle';
+                    
+                    detailsHTML += `
+                        <div class="clause-card">
+                            <h4>Clause #${index + 1}</h4>
+                            <div class="clause-content">
+                                "${clause.clause}"
+                            </div>
+                            <div class="compliance-details">
+                                <span class="badge ${badgeClass}">
+                                    <i class="fas fa-${icon}"></i>
+                                    ${isCompliant ? 'Compliant' : 'Non-Compliant'}
+                                </span>
+                                <p><strong>Analysis:</strong> ${clause.reason}</p>
+                                ${!isCompliant && clause.suggested_fix ? `
+                                    <p><strong>Suggested Fix:</strong> ${clause.suggested_fix}</p>
+                                ` : ''}
+                                ${clause.source_doc ? `
+                                    <p><strong>Source Document:</strong> ${clause.source_doc}</p>
+                                    ${clause.source_text ? `
+                                        <p><strong>Context:</strong> "${clause.source_text}..."</p>
+                                    ` : ''}
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                detailedAnalysis.innerHTML = detailsHTML;
+            }
+        }
+
+        // Helper function to capitalize first letter
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        // Example product for testing
+        document.getElementById('product-text').value = `This Murabaha agreement involves deferred payment terms with added profit markup. 
+The seller retains ownership until full payment. An early payment penalty may apply in cases of default. 
+Liquidity is backed by conventional bonds.`;
+    </script>
+</body>
+</html>
